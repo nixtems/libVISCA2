@@ -895,6 +895,10 @@ VISCA_set_spot_ae_position(VISCAInterface_t *iface, VISCACamera_t *camera, uint8
 
 /* INQUIRIES */
 
+VISCA_API uint32_t VISCA_inquiry(VISCAInterface_t *iface, VISCACamera_t *camera,
+                                 unsigned char inquiry, unsigned char category,
+                                 unsigned char *response_buf, unsigned int response_buf_len);
+
 VISCA_API uint32_t
 VISCA_get_power(VISCAInterface_t *iface, VISCACamera_t *camera, uint8_t *power);
 
