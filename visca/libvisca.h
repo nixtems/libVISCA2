@@ -553,6 +553,10 @@ VISCA_close_serial(VISCAInterface_t *iface);
 
 /* COMMANDS */
 
+VISCA_API uint32_t VISCA_command(VISCAInterface_t *iface, VISCACamera_t *camera,
+                                 unsigned char command, unsigned char category,
+                                 unsigned char *payload_bytes, unsigned char num_payload_bytes);
+
 VISCA_API uint32_t
 VISCA_set_power(VISCAInterface_t *iface, VISCACamera_t *camera, uint8_t power);
 
