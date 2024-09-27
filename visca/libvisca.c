@@ -20,6 +20,7 @@
  */
 
 #include <stddef.h>
+#include <string.h>
 #include "libvisca.h"
 
 #ifdef VISCA_WIN
@@ -2746,6 +2747,56 @@ VISCA_set_register(VISCAInterface_t *iface, VISCACamera_t *camera, uint8_t reg_n
 /***********************************/
 /*       INQUIRY FUNCTIONS         */
 /***********************************/
+#ifndef MIN
+#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
+#endif
+/* Function for sending arbitrary VISCA inquiries. The response is copied to `response_buf`
+ * `response_buf` should be VISCA_INPUT_BUFFER_SIZE bytes long
+ * When passed in `reponse_buf_len` should be set to the size (in bytes) of `response_buf`
+ * The caller of this function is expected to decode the response themselves
+ */
+VISCA_API uint32_t VISCA_inquiry(VISCAInterface_t *iface, VISCACamera_t *camera,
+                                 unsigned char inquiry, unsigned char category,
+                                 unsigned char *response_buf, unsigned int response_buf_len)
+{
+  VISCAPacket_t packet;
+  uint32_t err;
+
+  /* Check parameters are valid */
+  if (response_buf == NULL || response_buf_len < VISCA_INPUT_BUFFER_SIZE)
+  {
+    return VISCA_FAILURE;
+  }
+
+  switch (category)
+  {
+    case VISCA_CATEGORY_INTERFACE:
+    case VISCA_CATEGORY_CAMERA1:
+    case VISCA_CATEGORY_PAN_TILTER:
+    case VISCA_CATEGORY_CAMERA2:
+      break;
+    default:
+      return VISCA_ERROR_SYNTAX;
+  }
+
+  /* Clear the input buffer */
+  memset(response_buf, 0x00, response_buf_len);
+
+  _VISCA_init_packet(&packet);
+  _VISCA_append_byte(&packet, VISCA_INQUIRY);
+  _VISCA_append_byte(&packet, category);
+  _VISCA_append_byte(&packet, inquiry);
+  err=_VISCA_send_packet_with_reply(iface, camera, &packet);
+  if (err!=VISCA_SUCCESS)
+  {
+    return err;
+  }
+  else
+  {
+    memcpy(response_buf, &(iface->ibuf), MIN(VISCA_INPUT_BUFFER_SIZE, response_buf_len));
+    return VISCA_SUCCESS;
+  }
+}
 
 VISCA_API uint32_t
 VISCA_get_videosystem(VISCAInterface_t *iface, VISCACamera_t *camera, uint8_t *system)
