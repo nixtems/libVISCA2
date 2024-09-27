@@ -19,6 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stddef.h>
 #include "libvisca.h"
 
 #ifdef VISCA_WIN
@@ -205,6 +206,48 @@ VISCA_get_camera_info(VISCAInterface_t *iface, VISCACamera_t *camera)
 /***********************************/
 /*       COMMAND FUNCTIONS         */
 /***********************************/
+
+/* Function for sending arbitrary VISCA commands */
+VISCA_API uint32_t VISCA_command(VISCAInterface_t *iface, VISCACamera_t *camera,
+                                 unsigned char command, unsigned char category,
+                                 unsigned char *payload, unsigned char payload_len)
+{
+  VISCAPacket_t packet;
+  unsigned char i;
+
+  /* Check parameters are valid */
+  switch (category)
+  {
+    case VISCA_CATEGORY_INTERFACE:
+    case VISCA_CATEGORY_CAMERA1:
+    case VISCA_CATEGORY_PAN_TILTER:
+    case VISCA_CATEGORY_CAMERA2:
+      break;
+    default:
+      return VISCA_ERROR_SYNTAX;
+  }
+
+  if (payload == NULL && payload_len != 0)
+  {
+    return VISCA_FAILURE;
+  }
+
+  _VISCA_init_packet(&packet);
+  _VISCA_append_byte(&packet, VISCA_COMMAND);
+  _VISCA_append_byte(&packet, category);
+  _VISCA_append_byte(&packet, command);
+  for (i = 0; i < payload_len; i++)
+  {
+    /* Check if there is space in the packet buffer to append another byte */
+    if (packet.length >= sizeof(packet.bytes))
+    {
+      return VISCA_ERROR_MESSAGE_LENGTH;
+    }
+    _VISCA_append_byte(&packet, payload[i]);
+  }
+
+  return _VISCA_send_packet_with_reply(iface, camera, &packet);
+}
 
 VISCA_API uint32_t
 VISCA_set_power(VISCAInterface_t *iface, VISCACamera_t *camera, uint8_t power)
